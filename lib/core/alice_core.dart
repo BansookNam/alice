@@ -27,8 +27,7 @@ class AliceCore {
   final bool darkTheme;
 
   /// Rx subject which contains all intercepted http calls
-  final BehaviorSubject<List<AliceHttpCall>> callsSubject =
-      BehaviorSubject.seeded([]);
+  final BehaviorSubject<List<AliceHttpCall>> callsSubject = BehaviorSubject.seeded([]);
 
   /// Icon url for notification
   final String notificationIcon;
@@ -65,6 +64,7 @@ class AliceCore {
     required this.maxCallsCount,
     this.directionality,
     this.showShareButton,
+    double? shakeThresholdGravity,
   }) {
     if (showNotification) {
       _initializeNotificationsPlugin();
@@ -75,7 +75,7 @@ class AliceCore {
         onPhoneShake: () {
           navigateToCallListScreen();
         },
-        shakeThresholdGravity: 4,
+        shakeThresholdGravity: shakeThresholdGravity ?? 1.5,
       );
     }
     _brightness = darkTheme ? Brightness.dark : Brightness.light;
@@ -93,8 +93,7 @@ class AliceCore {
 
   void _initializeNotificationsPlugin() {
     _flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
-    final initializationSettingsAndroid =
-        AndroidInitializationSettings(notificationIcon);
+    final initializationSettingsAndroid = AndroidInitializationSettings(notificationIcon);
     const initializationSettingsIOS = DarwinInitializationSettings();
     final initializationSettings = InitializationSettings(
       android: initializationSettingsAndroid,
@@ -109,16 +108,14 @@ class AliceCore {
   void _onCallsChanged() async {
     if (callsSubject.value.isNotEmpty) {
       _notificationMessage = _getNotificationMessage();
-      if (_notificationMessage != _notificationMessageShown &&
-          !_notificationProcessing) {
+      if (_notificationMessage != _notificationMessageShown && !_notificationProcessing) {
         await _showLocalNotification();
         _onCallsChanged();
       }
     }
   }
 
-  Future<void> _onDidReceiveNotificationResponse(
-      NotificationResponse response) async {
+  Future<void> _onDidReceiveNotificationResponse(NotificationResponse response) async {
     assert(response.payload != null, "payload can't be null");
     navigateToCallListScreen();
     return;
@@ -180,8 +177,7 @@ class AliceCore {
         .toList()
         .length;
 
-    final int loadingCalls =
-        calls.where((call) => call.loading).toList().length;
+    final int loadingCalls = calls.where((call) => call.loading).toList().length;
 
     final StringBuffer notificationsMessage = StringBuffer();
     if (loadingCalls > 0) {
@@ -223,8 +219,7 @@ class AliceCore {
       playSound: false,
       largeIcon: DrawableResourceAndroidBitmap(notificationIcon),
     );
-    const iOSPlatformChannelSpecifics =
-        DarwinNotificationDetails(presentSound: false);
+    const iOSPlatformChannelSpecifics = DarwinNotificationDetails(presentSound: false);
     final platformChannelSpecifics = NotificationDetails(
       android: androidPlatformChannelSpecifics,
       iOS: iOSPlatformChannelSpecifics,
@@ -283,8 +278,8 @@ class AliceCore {
     }
     selectedCall.loading = false;
     selectedCall.response = response;
-    selectedCall.duration = response.time.millisecondsSinceEpoch -
-        selectedCall.request!.time.millisecondsSinceEpoch;
+    selectedCall.duration =
+        response.time.millisecondsSinceEpoch - selectedCall.request!.time.millisecondsSinceEpoch;
 
     callsSubject.add([...callsSubject.value]);
   }
